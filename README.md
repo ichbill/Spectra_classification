@@ -1,8 +1,8 @@
 # Introduction
-This is the code implementation for Spectra classification. We use machine learning methods to predict whether an unseen sample contains a particular or several species. The code includes various machine learning methods including Neural Networks, Support Vector Machine, Naive Bayes, K-Nearest Neighbors and more. Our experiment results are reported in [Experiment results](#ExperimentResults).
+This is the code implementation for Spectra classification. We use machine learning methods to predict whether an unseen sample contains a particular or several species. The code includes various machine learning methods which are involved in our experiments, including Neural Networks, Support Vector Machine, Naive Bayes, K-Nearest Neighbors and more. The experiment results are reported in [Experiment results](#ExperimentResults).
 
 # Data
-The data distribution we used in our experiment is shown as below.<br>
+The data distribution that we used in our experiments is shown as below.<br>
 ![image](https://github.com/ichbill/Spectra_classification/blob/main/assets/img/data_distribution.png)
 
 <a name="ExperimentResults"/> 
