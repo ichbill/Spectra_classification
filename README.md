@@ -1,5 +1,5 @@
 # Introduction
-This is the implementation of Spectra classification. The goal of this project is to use machine learning methods to predict whether an unseen sample contains a particular or several species.
+This is the code implementation for Spectra classification. We use machine learning methods to predict whether an unseen sample contains a particular or several species. The code includes various machine learning methods including Neural Networks, Support Vector Machine, Naive Bayes, K-Nearest Neighbors and more. Our experiment results are reported in * [Experiment results](#Textdetection).
 
 # Data
 The data distribution we used in our experiment is shown as below.<br>
