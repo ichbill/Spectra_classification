@@ -7,7 +7,9 @@ The data distribution we used in our experiment is shown as below.<br>
 
 # Experiment results
 Here are some of our experiments results. <br>
+Our model performence on detecting whether a sample contains a certain species is shown as below. <br>
 ![image](https://github.com/ichbill/Spectra_classification/blob/main/assets/img/detection.png)<br>
+Here are the comparisons of two versions of our models under different experiment settings. <br>
 ![image](https://github.com/ichbill/Spectra_classification/blob/main/assets/img/results.png)
 
 # Contributors
