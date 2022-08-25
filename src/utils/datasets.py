@@ -32,10 +32,7 @@ mixed_data_path = "/home/exx/Spoon/spectra_classification/data/Mixes_04-07-2022/
 
 normalized_datapath = '/home/exx/Spoon/spectra_classification/data/normalized_data.txt'
 
-def writelog(instring, filepath):
-    with open(filepath,'a') as f:
-        f.write(instring+'\n')
-    print(instring)
+data_10s_path = '/home/exx/Spoon/spectra_classification/ready/data/07-27-2022_Raman_10_sec_data'
 
 def hash_labels(label):
     if np.array_equal(np.array([0,0,0]),label):
@@ -104,6 +101,44 @@ def read_data(data_path):
                 lines[i][j] = float(lines[i][j])
         sample = np.array(lines)
         filenames.append(file)
+        samples.append(sample)
+        labels.append(label)
+    return samples, labels, filenames
+
+def read_10s_data(data_path):
+    samples = []
+    labels = []
+    filenames = []
+    for filename in sorted(os.listdir(data_path)):
+        # label
+        # AA:       aa-10sec1accu-101, aa-test2-10sec1accu
+        # Sm:       sm-10exposure-1accu-22
+        # Pg:       Pg-10sec-1accu7
+        # AA-Sm:    Aa-Sm10sec-ex-1accu-7
+        # AA-Pg:    a+p-10exposure-1accu-1
+        # Sm-Pg:    Pg-Sm10sec-ex-1accu-20
+        # AA-Sm-Pg: Aa-Pg-Sm-10s-expo-1accu-35
+
+        with open(os.path.join(data_path,filename)) as f:
+            lines = f.readlines()
+        if '#' in lines[0]:
+            lines.pop(0)
+        for i in range(len(lines)):
+            lines[i] = lines[i].replace('\n','')
+            lines[i] = lines[i].split('\t')
+            for j in range(len(lines[i])):
+                lines[i][j] = float(lines[i][j])
+        sample = np.array(lines)
+
+        label = np.array([0,0,0])
+        if ("aa" in filename) or ("Aa" in filename) or ("a+" in filename):
+            label[0] = 1
+        if ("sm" in filename) or ("Sm" in filename):
+            label[1] = 1
+        if ("+p" in filename) or ("Pg" in filename):
+            label[2] = 1
+
+        filenames.append(filename)
         samples.append(sample)
         labels.append(label)
     return samples, labels, filenames
@@ -263,30 +298,42 @@ def save_normalized_data(data, labels, data_path):
                 f.write(str(intensity)+' ')
             f.write(hash_labels(labels[i])+'\n')
 
-def data_preprocess(n_dim=35, expand_dim=True):
+def data_preprocess(n_dim=35, expand_dim=True, dataset='30s'):
     # read data
-    AA_data, AA_labels, AA_file_names = read_data(AA_data_path)
-    print('Number of AA samples:',len(AA_data))
-    Pg_data, Pg_labels, Pg_file_names = read_data(Pg_data_path)
-    print('Number of Pg samples:',len(Pg_data))
-    Sm_data, Sm_labels, Sm_file_names = read_data(Sm_data_path)
-    print('Number of Sm samples:',len(Sm_data))
-    mixed_data, mixed_labels, mixed_file_names = read_data(mixed_data_path)
-    print('Number of mixed samples:',len(mixed_data))
-    AA_Pg_data, AA_Pg_labels, AA_Pg_file_names = read_data(AA_Pg_data_path)
-    print('Number of AA-Pg samples:',len(AA_Pg_data))
-    AA_Sm_data, AA_Sm_labels, AA_Sm_file_names = read_data(AA_Sm_data_path)
-    print('Number of AA-Sm samples:',len(AA_Sm_data))
-    Pg_Sm_data, Pg_Sm_labels, Pg_Sm_file_names = read_data(Pg_Sm_data_path)
-    print('Number of Pg-Sm samples:',len(Pg_Sm_data))
+    if dataset=='30s':
+        AA_data, AA_labels, AA_file_names = read_data(AA_data_path)
+        print('Number of AA samples:',len(AA_data))
+        Pg_data, Pg_labels, Pg_file_names = read_data(Pg_data_path)
+        print('Number of Pg samples:',len(Pg_data))
+        Sm_data, Sm_labels, Sm_file_names = read_data(Sm_data_path)
+        print('Number of Sm samples:',len(Sm_data))
+        mixed_data, mixed_labels, mixed_file_names = read_data(mixed_data_path)
+        print('Number of mixed samples:',len(mixed_data))
+        AA_Pg_data, AA_Pg_labels, AA_Pg_file_names = read_data(AA_Pg_data_path)
+        print('Number of AA-Pg samples:',len(AA_Pg_data))
+        AA_Sm_data, AA_Sm_labels, AA_Sm_file_names = read_data(AA_Sm_data_path)
+        print('Number of AA-Sm samples:',len(AA_Sm_data))
+        Pg_Sm_data, Pg_Sm_labels, Pg_Sm_file_names = read_data(Pg_Sm_data_path)
+        print('Number of Pg-Sm samples:',len(Pg_Sm_data))
 
-    all_data = AA_data + Sm_data + Pg_data + AA_Pg_data + AA_Sm_data + Pg_Sm_data + mixed_data
-    target_labels = AA_labels + Sm_labels + Pg_labels + AA_Pg_labels + AA_Sm_labels + Pg_Sm_labels + mixed_labels
-    target_names = AA_file_names + Sm_file_names + Pg_file_names + AA_Pg_file_names + AA_Sm_file_names + Pg_Sm_file_names + mixed_file_names
-    print('Number of samples:', len(all_data))
-    print('Data dimensions:', len(all_data[0]))
+        all_data = AA_data + Sm_data + Pg_data + AA_Pg_data + AA_Sm_data + Pg_Sm_data + mixed_data
+        target_labels = AA_labels + Sm_labels + Pg_labels + AA_Pg_labels + AA_Sm_labels + Pg_Sm_labels + mixed_labels
+        target_names = AA_file_names + Sm_file_names + Pg_file_names + AA_Pg_file_names + AA_Sm_file_names + Pg_Sm_file_names + mixed_file_names
+        print('Number of samples:', len(all_data))
+        print('Data dimensions:', len(all_data[0]))
 
-    all_data_pca = pca_data(all_data, n_dim)
+        all_data_pca = pca_data(all_data, n_dim)
+
+    elif dataset=='10s':
+        data_10s, labels_10s, names_10s = read_10s_data(data_10s_path)
+        print('Number of samples:', len(data_10s))
+        print('Data dimensions:', len(data_10s[0]))
+
+        target_labels = labels_10s
+        target_names = names_10s
+        all_data_pca = pca_data(data_10s, n_dim)
+
+    
     # save normalized data
     # save_normalized_data(all_data_flatten, target_labels, normalized_datapath)
 

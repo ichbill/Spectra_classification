@@ -32,8 +32,6 @@ log_path = '/home/exx/Spoon/spectra_classification/logs/data_augmentation.txt'
 
 # species_dict = {0:'AA', 1:'Fn', 2:'Pg'}
 
-data_aug_list = ['jitter', 'permutation', 'spawener', 'wdba', 'rgw', 'dgw']
-
 def writelog(instring, filepath):
     with open(filepath,'a') as f:
         f.write(instring+'\n')
@@ -113,9 +111,9 @@ def get_test_data_labels(y_pred,test_labels,test_data):
 def data_augmentation(data, labels, aug_list):
     if len(aug_list)==0:
         return data, labels
-    else:
-        print('using data augmentation methods ...')
-        print(f'{aug_list}')
+    # else:
+    #     print('using data augmentation methods ...')
+    #     print(f'{aug_list}')
 
     aug_data = []
     aug_labels = []
@@ -156,106 +154,118 @@ def data_augmentation(data, labels, aug_list):
 
     return aug_data, aug_labels
 
-def train_AA(train_data, AA_train_labels, test_data, AA_test_labels, data_augmentation_f=[], n_dim=35):
+def train_AA(train_data, AA_train_labels, test_data, AA_test_labels, ckpt_path='', data_augmentation_f=[], n_dim=35, dropout=0.45, lr=1e-2, hidden_size=100, mode='train'):
     keras.backend.clear_session()
 
     AA_train_data, AA_train_labels = data_augmentation(train_data, AA_train_labels, data_augmentation_f)
 
     AA_model = keras.models.Sequential()
-    AA_model.add(keras.layers.Dense(100,activation='relu',input_shape=(n_dim,)))
+    AA_model.add(keras.layers.Dense(hidden_size,activation='relu',input_shape=(n_dim,)))
     AA_model.add(keras.layers.BatchNormalization())
-    AA_model.add(keras.layers.Dropout(0.45))
+    AA_model.add(keras.layers.Dropout(dropout))
     AA_model.add(keras.layers.Dense(1,activation='sigmoid'))
 
     #print(AA_model.summary())
-
     learning_rate = keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-2,
+        initial_learning_rate=lr,
         decay_steps=10000,
         decay_rate=0.7)
     optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
     AA_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-    callbacks = [keras.callbacks.EarlyStopping(monitor='val_loss',patience=300),keras.callbacks.ModelCheckpoint(filepath='../model/best_AA_model.h5',monitor='val_accuracy',save_best_only=True)]
+    if mode == 'train':
+        callbacks = [keras.callbacks.EarlyStopping(monitor='val_loss',patience=300,verbose=0),keras.callbacks.ModelCheckpoint(filepath='../model/AA_model_ckpt.h5',monitor='val_accuracy',save_best_only=True,verbose=0)]
 
-    history = AA_model.fit(AA_train_data, AA_train_labels, epochs=1000, batch_size=256, callbacks=callbacks, shuffle=True, validation_data=(test_data, AA_test_labels), verbose=0)
+        history = AA_model.fit(AA_train_data, AA_train_labels, epochs=1000, batch_size=256, callbacks=callbacks, shuffle=True, validation_data=(test_data, AA_test_labels), verbose=0)
 
-    # model.load_weights('../model/best_AA_model.h5')
-    # plot.plot_history(history)
+        AA_model.load_weights('../model/AA_model_ckpt.h5')
+        # plot.plot_history(history)
+    elif mode == 'test':
+        AA_model.load_weights(ckpt_path)
 
-    performance = AA_model.evaluate(test_data, AA_test_labels)
-    print(f'{performance=}')
-    writelog('AA accuracy:'+str(performance[1]), log_path)
+    performance = AA_model.evaluate(test_data, AA_test_labels, verbose=0)
+    # print(f'{performance=}')
+    # writelog('AA accuracy:'+str(performance[1]), log_path)
 
-    AA_results = AA_model.predict(test_data)
+    AA_results = AA_model.predict(test_data, verbose=0)
     for i in range(len(AA_results)):
         AA_results[i] = round(AA_results[i][0])
-    print(f"{AA_results.shape=}")
+    # print(f"{AA_results.shape=}")
 
-    return AA_results
+    return AA_results, performance[1], performance[0], AA_model
 
-def train_Sm(train_data, Sm_train_labels, test_data, Sm_test_labels, data_augmentation_f=[], n_dim=35):
+def train_Sm(train_data, Sm_train_labels, test_data, Sm_test_labels, ckpt_path='', data_augmentation_f=[], n_dim=35, dropout=0.45, lr=1e-2, hidden_size=100, mode='train'):
     keras.backend.clear_session()
 
     Sm_train_data, Sm_train_labels = data_augmentation(train_data, Sm_train_labels, data_augmentation_f)
 
     Sm_model = keras.models.Sequential()
-    Sm_model.add(keras.layers.Dense(100,activation='relu',input_shape=(n_dim,)))
+    Sm_model.add(keras.layers.Dense(hidden_size,activation='relu',input_shape=(n_dim,)))
     Sm_model.add(keras.layers.BatchNormalization())
-    Sm_model.add(keras.layers.Dropout(0.45))
+    Sm_model.add(keras.layers.Dropout(dropout))
     Sm_model.add(keras.layers.Dense(1,activation='sigmoid'))
 
     learning_rate = keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-2,
+        initial_learning_rate=lr,
         decay_steps=10000,
         decay_rate=0.9)
     optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
     Sm_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    callbacks = [keras.callbacks.EarlyStopping(monitor='val_loss',patience=300),keras.callbacks.ModelCheckpoint(filepath='../model/best_Sm_model.h5',monitor='val_accuracy',save_best_only=True)]
 
-    history = Sm_model.fit(Sm_train_data, Sm_train_labels, epochs=1000, batch_size=256, callbacks=callbacks, shuffle=True, validation_data=(test_data, Sm_test_labels), verbose=0)
-    # plot.plot_history(history)
-    # model.load_weights('../model/best_Sm_model.h5')
-    performance = Sm_model.evaluate(test_data, Sm_test_labels)
-    print(performance)
-    writelog('Sm accuracy:'+str(performance[1]), log_path)
+    if mode == 'train':
+        callbacks = [keras.callbacks.EarlyStopping(monitor='val_loss',patience=300),keras.callbacks.ModelCheckpoint(filepath='../model/Sm_model_ckpt.h5',monitor='val_accuracy',save_best_only=True)]
 
-    Sm_results = Sm_model.predict(test_data)
+        history = Sm_model.fit(Sm_train_data, Sm_train_labels, epochs=1000, batch_size=256, callbacks=callbacks, shuffle=True, validation_data=(test_data, Sm_test_labels), verbose=0)
+        # plot.plot_history(history)
+        Sm_model.load_weights('../model/Sm_model_ckpt.h5')
+    elif mode == 'test':
+        Sm_model.load_weights(ckpt_path)
+
+    performance = Sm_model.evaluate(test_data, Sm_test_labels, verbose=0)
+    # print(performance)
+    # writelog('Sm accuracy:'+str(performance[1]), log_path)
+
+    Sm_results = Sm_model.predict(test_data, verbose=0)
     for i in range(len(Sm_results)):
         Sm_results[i] = round(Sm_results[i][0])
-    print(f"{Sm_results.shape=}")
+    # print(f"{Sm_results.shape=}")
 
-    return Sm_results
+    return Sm_results, performance[1], performance[0], Sm_model
 
-def train_Pg(train_data, Pg_train_labels, test_data, Pg_test_labels, data_augmentation_f=[], n_dim=35):
+def train_Pg(train_data, Pg_train_labels, test_data, Pg_test_labels, ckpt_path='', data_augmentation_f=[], n_dim=35, dropout=0.45, lr=1e-2, hidden_size=100, mode='train'):
     keras.backend.clear_session()
 
     Pg_train_data, Pg_train_labels = data_augmentation(train_data, Pg_train_labels, data_augmentation_f)
 
     Pg_model = keras.models.Sequential()
-    Pg_model.add(keras.layers.Dense(100,activation='relu',input_shape=(n_dim,)))
+    Pg_model.add(keras.layers.Dense(hidden_size,activation='relu',input_shape=(n_dim,)))
     Pg_model.add(keras.layers.BatchNormalization())
-    Pg_model.add(keras.layers.Dropout(0.45))
+    Pg_model.add(keras.layers.Dropout(dropout))
     Pg_model.add(keras.layers.Dense(1,activation='sigmoid'))
 
     learning_rate = keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate=1e-2,
+        initial_learning_rate=lr,
         decay_steps=10000,
         decay_rate=0.7)
     optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
     Pg_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    callbacks = [keras.callbacks.EarlyStopping(monitor='val_loss',patience=200),keras.callbacks.ModelCheckpoint(filepath='../model/best_Pg_model.h5',monitor='val_accuracy',save_best_only=True)]
 
-    history = Pg_model.fit(Pg_train_data, Pg_train_labels, epochs=1000, batch_size=256, callbacks=callbacks, shuffle=True, validation_data=(test_data, Pg_test_labels), verbose=0)
-    # model.load_weights('../model/best_Pg_model.h5')
-    performance = Pg_model.evaluate(test_data, Pg_test_labels)
-    print(performance)
-    writelog('Pg accuracy:'+str(performance[1]), log_path)
+    if mode == 'train':
+        callbacks = [keras.callbacks.EarlyStopping(monitor='val_loss',patience=200),keras.callbacks.ModelCheckpoint(filepath='../model/Pg_model_ckpt.h5',monitor='val_accuracy',save_best_only=True)]
 
-    Pg_results = Pg_model.predict(test_data)
+        history = Pg_model.fit(Pg_train_data, Pg_train_labels, epochs=1000, batch_size=256, callbacks=callbacks, shuffle=True, validation_data=(test_data, Pg_test_labels), verbose=0)
+        Pg_model.load_weights('../model/Pg_model_ckpt.h5')
+    elif mode == 'test':
+        Pg_model.load_weights(ckpt_path)
+
+    performance = Pg_model.evaluate(test_data, Pg_test_labels, verbose=0)
+    # print(performance)
+    # writelog('Pg accuracy:'+str(performance[1]), log_path)
+
+    Pg_results = Pg_model.predict(test_data, verbose=0)
     for i in range(len(Pg_results)):
         Pg_results[i] = round(Pg_results[i][0])
-    print(f"{Pg_results.shape=}")
+    # print(f"{Pg_results.shape=}")
 
-    return Pg_results
+    return Pg_results, performance[1], performance[0], Pg_model
 
